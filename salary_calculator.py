@@ -638,15 +638,15 @@ class App(tk.Tk):
 
     # ── 상태바 ───────────────────────────────────────────────
     def _build_statusbar(self):
-        sb = tk.Frame(self, bg="#E2E8F0", height=28)
+        sb = tk.Frame(self, bg="#E2E8F0")
         sb.pack(fill="x", side="bottom")
-        sb.pack_propagate(False)
+        tk.Frame(sb, bg=BORDER, height=1).pack(fill="x", side="top")
         self._status_l = tk.Label(sb, text="", bg="#E2E8F0", fg=SUBTEXT,
-                                  font=("Helvetica", 10))
+                                  font=("Helvetica", 11), anchor="w")
         self._status_r = tk.Label(sb, text="", bg="#E2E8F0", fg=SUBTEXT,
-                                  font=("Helvetica", 10))
-        self._status_l.pack(side="left",  padx=16, pady=4)
-        self._status_r.pack(side="right", padx=16, pady=4)
+                                  font=("Helvetica", 11), anchor="e")
+        self._status_l.pack(side="left",  padx=16, pady=8)
+        self._status_r.pack(side="right", padx=16, pady=8)
 
     def _update_status(self):
         self._status_l.config(text=f"마지막 저장: {self.last_saved}")
