@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+.localized
+
+# 기타 Desktop 파일
+*.pdf
+*.docx
+*.zip
+*.app
+*.pptx
+~$*
+.vscode/
+PPT/
+rokey/
