@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, desc, case, asc, or_, delete
+from sqlalchemy import select, func, desc, case, asc, or_, and_, delete
 from dotenv import load_dotenv
 
 from database import init_db, get_db
@@ -78,6 +78,7 @@ async def get_jobs(
     keyword: str | None = None,
     location: str | None = None,
     category: str | None = None,
+    experience_type: str | None = None,
     sort: str = "latest",
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
@@ -101,6 +102,23 @@ async def get_jobs(
         stmt = stmt.where(JobPosting.location.ilike(f"%{location}%"))
     if category and category in CATEGORY_FILTERS:
         stmt = stmt.where(or_(*CATEGORY_FILTERS[category]))
+
+    JUNIOR_COND = or_(
+        JobPosting.experience.ilike('%신입%'),
+        JobPosting.experience.ilike('%경력무관%'),
+        JobPosting.experience.ilike('%무관%'),
+        JobPosting.experience == '0',
+    )
+    if experience_type == 'junior':
+        stmt = stmt.where(JUNIOR_COND)
+    elif experience_type == 'experienced':
+        stmt = stmt.where(
+            and_(
+                JobPosting.experience.isnot(None),
+                JobPosting.experience != '',
+                ~JUNIOR_COND,
+            )
+        )
 
     total_stmt = select(func.count()).select_from(stmt.subquery())
     total = (await db.execute(total_stmt)).scalar_one()

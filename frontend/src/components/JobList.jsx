@@ -163,6 +163,7 @@ export default function JobList() {
   const [source, setSource] = useState('')
   const [location, setLocation] = useState('')
   const [sort, setSort] = useState('latest')
+  const [experienceType, setExperienceType] = useState('')
   const [showBookmarks, setShowBookmarks] = useState(false)
 
   const { isBookmarked, toggle, list: bookmarkList, count: bookmarkCount } = useBookmarks()
@@ -205,6 +206,7 @@ export default function JobList() {
       ...(category && { category }),
       ...(source && { source }),
       ...(location && { location }),
+      ...(experienceType && { experience_type: experienceType }),
     }
     return { ...base, ...overrides }
   }
@@ -235,6 +237,12 @@ export default function JobList() {
   const handleSort = (s) => {
     setSort(s)
     load(1, buildParams({ sort: s }))
+  }
+
+  const handleExperienceType = (et) => {
+    const next = experienceType === et ? '' : et
+    setExperienceType(next)
+    load(1, buildParams({ experience_type: next || undefined }))
   }
 
   const displayedJobs = showBookmarks ? bookmarkList : jobs
@@ -283,6 +291,10 @@ export default function JobList() {
           <div className="sort-toggle">
             <button className={`sort-btn${sort === 'latest' ? ' active' : ''}`} onClick={() => handleSort('latest')} disabled={showBookmarks}>최신순</button>
             <button className={`sort-btn${sort === 'deadline' ? ' active' : ''}`} onClick={() => handleSort('deadline')} disabled={showBookmarks}>마감임박순</button>
+          </div>
+          <div className="sort-toggle">
+            <button className={`sort-btn${experienceType === 'junior' ? ' active' : ''}`} onClick={() => handleExperienceType('junior')} disabled={showBookmarks}>신입</button>
+            <button className={`sort-btn${experienceType === 'experienced' ? ' active' : ''}`} onClick={() => handleExperienceType('experienced')} disabled={showBookmarks}>경력</button>
           </div>
           <button className={`bookmark-toggle${showBookmarks ? ' active' : ''}`} onClick={() => setShowBookmarks(s => !s)}>
             {showBookmarks ? '♥' : '♡'} 관심공고{bookmarkCount > 0 && ` ${bookmarkCount}`}

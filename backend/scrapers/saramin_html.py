@@ -69,11 +69,11 @@ def _parse_item(item) -> Dict | None:
         rec_idx = re.search(r"rec_idx=(\d+)", href)
         job_id = rec_idx.group(1) if rec_idx else href
 
-        # job_condition 순서: 지역, 고용형태, 경력, 급여, 마감
+        # job_condition 순서: 지역, 경력, 학력, 고용형태, 급여
         conditions = [s.get_text(strip=True) for s in condition_spans]
         location = conditions[0] if len(conditions) > 0 else ""
-        experience = conditions[2] if len(conditions) > 2 else ""
-        salary = conditions[3] if len(conditions) > 3 else ""
+        experience = conditions[1] if len(conditions) > 1 else ""
+        salary = conditions[4] if len(conditions) > 4 else ""
 
         return {
             "source": "saramin",
