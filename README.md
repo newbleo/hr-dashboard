@@ -165,4 +165,4 @@ ALLOWED_ORIGINS=http://localhost:5173
 
 ---
 
-만든 사람: **밍수박사** · [LinkedIn](https://www.linkedin.com/in/minsooim)
+만든이: **밍수박사**

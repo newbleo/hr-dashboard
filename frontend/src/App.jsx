@@ -17,15 +17,7 @@ export default function App() {
       </main>
       <footer style={styles.footer}>
         <div className="container" style={styles.footerInner}>
-          <span>만든 사람 <strong>밍수박사</strong></span>
-          <a
-            href="https://www.linkedin.com/in/minsooim"
-            target="_blank"
-            rel="noreferrer"
-            style={styles.footerLink}
-          >
-            LinkedIn →
-          </a>
+          <span>만든이: <strong>밍수박사</strong></span>
         </div>
       </footer>
       <Analytics />
