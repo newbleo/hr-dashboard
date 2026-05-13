@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/react'
 import JobList from './components/JobList.jsx'
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
           </a>
         </div>
       </footer>
+      <Analytics />
     </div>
   )
 }
