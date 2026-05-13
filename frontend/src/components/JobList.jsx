@@ -18,6 +18,34 @@ const CATEGORIES = [
   { key: '총무', label: '총무' },
 ]
 
+const BOOKMARK_KEY = 'jarjupjup_bookmarks'
+
+function useBookmarks() {
+  const [bookmarks, setBookmarks] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(BOOKMARK_KEY) || '{}') }
+    catch { return {} }
+  })
+
+  const toggle = (job, e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setBookmarks(prev => {
+      const next = { ...prev }
+      if (next[job.id]) delete next[job.id]
+      else next[job.id] = job
+      localStorage.setItem(BOOKMARK_KEY, JSON.stringify(next))
+      return next
+    })
+  }
+
+  return {
+    isBookmarked: (id) => !!bookmarks[id],
+    toggle,
+    list: Object.values(bookmarks),
+    count: Object.keys(bookmarks).length,
+  }
+}
+
 function calcDday(deadline) {
   if (!deadline) return null
   const cleaned = deadline.replace(/[~\s]/g, '')
@@ -48,19 +76,53 @@ function DdayBadge({ deadline }) {
   return <span className="dday dday-normal">D-{dday}</span>
 }
 
+function JobCard({ job, isBookmarked, onBookmark }) {
+  return (
+    <div className="job-card-wrap">
+      <a href={job.url} target="_blank" rel="noreferrer" className="job-card-link">
+        <div className="job-card">
+          <div className="job-card-top">
+            <span className={`badge badge-${job.source}`}>
+              {SOURCE_LABEL[job.source] || job.source}
+            </span>
+            <DdayBadge deadline={job.deadline} />
+          </div>
+          <div className="job-company">{job.company}</div>
+          <div className="job-title">{job.title}</div>
+          <div className="job-meta">
+            {job.location && <span className="meta-chip">📍 {job.location}</span>}
+            {job.experience && <span className="meta-chip">💼 {job.experience}</span>}
+            {job.salary && <span className="meta-chip">💰 {job.salary}</span>}
+          </div>
+        </div>
+      </a>
+      <button
+        className={`bookmark-btn${isBookmarked ? ' active' : ''}`}
+        onClick={(e) => onBookmark(job, e)}
+        title={isBookmarked ? '북마크 해제' : '북마크'}
+      >
+        {isBookmarked ? '♥' : '♡'}
+      </button>
+    </div>
+  )
+}
+
 export default function JobList() {
   const [jobs, setJobs] = useState([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+  const [warming, setWarming] = useState(false)
+  const [warmingCount, setWarmingCount] = useState(0)
 
   const [keyword, setKeyword] = useState('')
   const [category, setCategory] = useState('')
   const [source, setSource] = useState('')
   const [sort, setSort] = useState('latest')
-  const [error, setError] = useState(false)
-  const [warming, setWarming] = useState(false)
-  const [warmingCount, setWarmingCount] = useState(0)
+  const [showBookmarks, setShowBookmarks] = useState(false)
+
+  const { isBookmarked, toggle, list: bookmarkList, count: bookmarkCount } = useBookmarks()
 
   const MAX_RETRIES = 4
   const RETRY_DELAY = 15000
@@ -104,10 +166,14 @@ export default function JobList() {
 
   useEffect(() => { load(1, {}) }, [])
 
-  const handleSearch = () => load(1, buildParams())
+  const handleSearch = () => {
+    setShowBookmarks(false)
+    load(1, buildParams())
+  }
 
   const handleCategory = (cat) => {
     setCategory(cat)
+    setShowBookmarks(false)
     load(1, buildParams({ category: cat }))
   }
 
@@ -121,6 +187,11 @@ export default function JobList() {
     load(1, buildParams({ sort: s }))
   }
 
+  const handleBookmarkToggle = () => {
+    setShowBookmarks(s => !s)
+  }
+
+  const displayedJobs = showBookmarks ? bookmarkList : jobs
   const totalPages = Math.ceil(total / 20)
 
   return (
@@ -142,7 +213,7 @@ export default function JobList() {
         {CATEGORIES.map(c => (
           <button
             key={c.key}
-            className={`cat-tab${category === c.key ? ' active' : ''}`}
+            className={`cat-tab${!showBookmarks && category === c.key ? ' active' : ''}`}
             onClick={() => handleCategory(c.key)}
           >
             {c.label}
@@ -153,7 +224,8 @@ export default function JobList() {
       {/* 필터 + 정렬 */}
       <div className="filter-bar">
         <div className="filter-left">
-          <select className="filter-sm" value={source} onChange={e => handleSource(e.target.value)}>
+          <select className="filter-sm" value={source} onChange={e => handleSource(e.target.value)}
+            disabled={showBookmarks}>
             <option value="">전체 포털</option>
             <option value="saramin">사람인</option>
             <option value="wanted">원티드</option>
@@ -164,18 +236,28 @@ export default function JobList() {
             <button
               className={`sort-btn${sort === 'latest' ? ' active' : ''}`}
               onClick={() => handleSort('latest')}
+              disabled={showBookmarks}
             >최신순</button>
             <button
               className={`sort-btn${sort === 'deadline' ? ' active' : ''}`}
               onClick={() => handleSort('deadline')}
+              disabled={showBookmarks}
             >마감임박순</button>
           </div>
+          <button
+            className={`bookmark-toggle${showBookmarks ? ' active' : ''}`}
+            onClick={handleBookmarkToggle}
+          >
+            {showBookmarks ? '♥' : '♡'} 관심공고{bookmarkCount > 0 && ` ${bookmarkCount}`}
+          </button>
         </div>
-        <span className="total-count">총 {total.toLocaleString()}건</span>
+        <span className="total-count">
+          {showBookmarks ? `북마크 ${bookmarkList.length}건` : `총 ${total.toLocaleString()}건`}
+        </span>
       </div>
 
       {/* 공고 목록 */}
-      {loading ? (
+      {!showBookmarks && loading ? (
         <div className="empty-state">
           {warming ? (
             <>
@@ -186,44 +268,29 @@ export default function JobList() {
             </>
           ) : '불러오는 중...'}
         </div>
-      ) : error ? (
+      ) : !showBookmarks && error ? (
         <div className="empty-state">
           서버에 연결할 수 없어요.<br />
           <span style={{ fontSize: 13, color: '#bbb' }}>잠시 후 새로고침 해주세요.</span>
         </div>
-      ) : jobs.length === 0 ? (
-        <div className="empty-state">검색 결과가 없어요.</div>
+      ) : displayedJobs.length === 0 ? (
+        <div className="empty-state">
+          {showBookmarks ? '아직 북마크한 공고가 없어요. ♡를 눌러 저장해보세요.' : '검색 결과가 없어요.'}
+        </div>
       ) : (
         <>
           <div className="job-grid">
-            {jobs.map(job => (
-              <a
+            {displayedJobs.map(job => (
+              <JobCard
                 key={job.id}
-                href={job.url}
-                target="_blank"
-                rel="noreferrer"
-                className="job-card-link"
-              >
-                <div className="job-card">
-                  <div className="job-card-top">
-                    <span className={`badge badge-${job.source}`}>
-                      {SOURCE_LABEL[job.source] || job.source}
-                    </span>
-                    <DdayBadge deadline={job.deadline} />
-                  </div>
-                  <div className="job-company">{job.company}</div>
-                  <div className="job-title">{job.title}</div>
-                  <div className="job-meta">
-                    {job.location && <span className="meta-chip">📍 {job.location}</span>}
-                    {job.experience && <span className="meta-chip">💼 {job.experience}</span>}
-                    {job.salary && <span className="meta-chip">💰 {job.salary}</span>}
-                  </div>
-                </div>
-              </a>
+                job={job}
+                isBookmarked={isBookmarked(job.id)}
+                onBookmark={toggle}
+              />
             ))}
           </div>
 
-          {totalPages > 1 && (
+          {!showBookmarks && totalPages > 1 && (
             <div className="pagination">
               <button
                 onClick={() => load(page - 1, buildParams())}
