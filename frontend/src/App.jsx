@@ -14,6 +14,19 @@ export default function App() {
       <main className="container" style={{ paddingTop: 24, paddingBottom: 60 }}>
         <JobList />
       </main>
+      <footer style={styles.footer}>
+        <div className="container" style={styles.footerInner}>
+          <span>만든 사람 <strong>밍수박사</strong></span>
+          <a
+            href="https://www.linkedin.com/in/minsooim"
+            target="_blank"
+            rel="noreferrer"
+            style={styles.footerLink}
+          >
+            LinkedIn →
+          </a>
+        </div>
+      </footer>
     </div>
   )
 }
@@ -46,5 +59,23 @@ const styles = {
     fontSize: 12,
     color: '#aaa',
     fontWeight: 400,
+  },
+  footer: {
+    borderTop: '1px solid #eee',
+    background: '#fff',
+    padding: '20px 0',
+    marginTop: 8,
+  },
+  footerInner: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 16,
+    fontSize: 13,
+    color: '#aaa',
+  },
+  footerLink: {
+    color: '#3f51b5',
+    textDecoration: 'none',
+    fontWeight: 600,
   },
 }
