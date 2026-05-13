@@ -199,10 +199,17 @@ body {
   box-shadow: 0 4px 16px rgba(63,81,181,0.10);
 }
 
-.bookmark-btn {
+.card-actions {
   position: absolute;
-  bottom: 16px;
-  right: 14px;
+  bottom: 14px;
+  right: 12px;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  z-index: 1;
+}
+
+.bookmark-btn {
   background: none;
   border: none;
   font-size: 18px;
@@ -211,7 +218,6 @@ body {
   padding: 2px 4px;
   line-height: 1;
   transition: color 0.15s, transform 0.15s;
-  z-index: 1;
 }
 .bookmark-btn:hover {
   color: #e53935;
@@ -219,6 +225,25 @@ body {
 }
 .bookmark-btn.active {
   color: #e53935;
+}
+
+.share-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #ccc;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.share-btn:hover { color: #3f51b5; }
+.share-btn.copied { color: #43a047; }
+
+.update-time {
+  font-size: 11px;
+  color: #bbb;
+  margin-top: 2px;
 }
 
 .bookmark-toggle {

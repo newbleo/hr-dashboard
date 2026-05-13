@@ -18,6 +18,16 @@ const CATEGORIES = [
   { key: '총무', label: '총무' },
 ]
 
+const LOCATIONS = [
+  { key: '', label: '전체 지역' },
+  { key: '서울', label: '서울' },
+  { key: '경기', label: '경기/판교' },
+  { key: '부산', label: '부산' },
+  { key: '인천', label: '인천' },
+  { key: '대구', label: '대구' },
+  { key: '대전', label: '대전' },
+]
+
 const BOOKMARK_KEY = 'jarjupjup_bookmarks'
 
 function useBookmarks() {
@@ -44,6 +54,15 @@ function useBookmarks() {
     list: Object.values(bookmarks),
     count: Object.keys(bookmarks).length,
   }
+}
+
+function timeAgo(isoString) {
+  if (!isoString) return null
+  const diff = Math.floor((Date.now() - new Date(isoString + 'Z').getTime()) / 60000)
+  if (diff < 1) return '방금 전'
+  if (diff < 60) return `${diff}분 전 업데이트`
+  if (diff < 1440) return `${Math.floor(diff / 60)}시간 전 업데이트`
+  return `${Math.floor(diff / 1440)}일 전 업데이트`
 }
 
 function calcDday(deadline) {
@@ -76,6 +95,25 @@ function DdayBadge({ deadline }) {
   return <span className="dday dday-normal">D-{dday}</span>
 }
 
+function ShareButton({ url }) {
+  const [copied, setCopied] = useState(false)
+
+  const handle = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  return (
+    <button className={`share-btn${copied ? ' copied' : ''}`} onClick={handle} title="링크 복사">
+      {copied ? '✓' : '↗'}
+    </button>
+  )
+}
+
 function JobCard({ job, isBookmarked, onBookmark }) {
   return (
     <div className="job-card-wrap">
@@ -96,13 +134,16 @@ function JobCard({ job, isBookmarked, onBookmark }) {
           </div>
         </div>
       </a>
-      <button
-        className={`bookmark-btn${isBookmarked ? ' active' : ''}`}
-        onClick={(e) => onBookmark(job, e)}
-        title={isBookmarked ? '북마크 해제' : '북마크'}
-      >
-        {isBookmarked ? '♥' : '♡'}
-      </button>
+      <div className="card-actions">
+        <ShareButton url={job.url} />
+        <button
+          className={`bookmark-btn${isBookmarked ? ' active' : ''}`}
+          onClick={(e) => onBookmark(job, e)}
+          title={isBookmarked ? '북마크 해제' : '북마크'}
+        >
+          {isBookmarked ? '♥' : '♡'}
+        </button>
+      </div>
     </div>
   )
 }
@@ -115,10 +156,12 @@ export default function JobList() {
   const [error, setError] = useState(false)
   const [warming, setWarming] = useState(false)
   const [warmingCount, setWarmingCount] = useState(0)
+  const [lastUpdated, setLastUpdated] = useState(null)
 
   const [keyword, setKeyword] = useState('')
   const [category, setCategory] = useState('')
   const [source, setSource] = useState('')
+  const [location, setLocation] = useState('')
   const [sort, setSort] = useState('latest')
   const [showBookmarks, setShowBookmarks] = useState(false)
 
@@ -139,6 +182,7 @@ export default function JobList() {
       setJobs(res.data.items)
       setTotal(res.data.total)
       setPage(p)
+      if (res.data.items.length > 0) setLastUpdated(res.data.items[0].fetched_at)
       setLoading(false)
       setWarming(false)
     } catch {
@@ -160,6 +204,7 @@ export default function JobList() {
       ...(keyword && { keyword }),
       ...(category && { category }),
       ...(source && { source }),
+      ...(location && { location }),
     }
     return { ...base, ...overrides }
   }
@@ -182,13 +227,14 @@ export default function JobList() {
     load(1, buildParams({ source: s }))
   }
 
+  const handleLocation = (l) => {
+    setLocation(l)
+    load(1, buildParams({ location: l }))
+  }
+
   const handleSort = (s) => {
     setSort(s)
     load(1, buildParams({ sort: s }))
-  }
-
-  const handleBookmarkToggle = () => {
-    setShowBookmarks(s => !s)
   }
 
   const displayedJobs = showBookmarks ? bookmarkList : jobs
@@ -224,36 +270,32 @@ export default function JobList() {
       {/* 필터 + 정렬 */}
       <div className="filter-bar">
         <div className="filter-left">
-          <select className="filter-sm" value={source} onChange={e => handleSource(e.target.value)}
-            disabled={showBookmarks}>
+          <select className="filter-sm" value={source} onChange={e => handleSource(e.target.value)} disabled={showBookmarks}>
             <option value="">전체 포털</option>
             <option value="saramin">사람인</option>
             <option value="wanted">원티드</option>
             <option value="jumpit">점핏</option>
             <option value="peoplenjob">피플앤잡</option>
           </select>
+          <select className="filter-sm" value={location} onChange={e => handleLocation(e.target.value)} disabled={showBookmarks}>
+            {LOCATIONS.map(l => <option key={l.key} value={l.key}>{l.label}</option>)}
+          </select>
           <div className="sort-toggle">
-            <button
-              className={`sort-btn${sort === 'latest' ? ' active' : ''}`}
-              onClick={() => handleSort('latest')}
-              disabled={showBookmarks}
-            >최신순</button>
-            <button
-              className={`sort-btn${sort === 'deadline' ? ' active' : ''}`}
-              onClick={() => handleSort('deadline')}
-              disabled={showBookmarks}
-            >마감임박순</button>
+            <button className={`sort-btn${sort === 'latest' ? ' active' : ''}`} onClick={() => handleSort('latest')} disabled={showBookmarks}>최신순</button>
+            <button className={`sort-btn${sort === 'deadline' ? ' active' : ''}`} onClick={() => handleSort('deadline')} disabled={showBookmarks}>마감임박순</button>
           </div>
-          <button
-            className={`bookmark-toggle${showBookmarks ? ' active' : ''}`}
-            onClick={handleBookmarkToggle}
-          >
+          <button className={`bookmark-toggle${showBookmarks ? ' active' : ''}`} onClick={() => setShowBookmarks(s => !s)}>
             {showBookmarks ? '♥' : '♡'} 관심공고{bookmarkCount > 0 && ` ${bookmarkCount}`}
           </button>
         </div>
-        <span className="total-count">
-          {showBookmarks ? `북마크 ${bookmarkList.length}건` : `총 ${total.toLocaleString()}건`}
-        </span>
+        <div style={{ textAlign: 'right' }}>
+          <div className="total-count">
+            {showBookmarks ? `북마크 ${bookmarkList.length}건` : `총 ${total.toLocaleString()}건`}
+          </div>
+          {lastUpdated && !showBookmarks && (
+            <div className="update-time">{timeAgo(lastUpdated)}</div>
+          )}
+        </div>
       </div>
 
       {/* 공고 목록 */}
@@ -292,17 +334,9 @@ export default function JobList() {
 
           {!showBookmarks && totalPages > 1 && (
             <div className="pagination">
-              <button
-                onClick={() => load(page - 1, buildParams())}
-                disabled={page === 1}
-                className="page-btn"
-              >이전</button>
+              <button onClick={() => load(page - 1, buildParams())} disabled={page === 1} className="page-btn">이전</button>
               <span className="page-info">{page} / {totalPages}</span>
-              <button
-                onClick={() => load(page + 1, buildParams())}
-                disabled={page === totalPages}
-                className="page-btn"
-              >다음</button>
+              <button onClick={() => load(page + 1, buildParams())} disabled={page === totalPages} className="page-btn">다음</button>
             </div>
           )}
         </>
