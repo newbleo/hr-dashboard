@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from database import AsyncSessionLocal
 from models import JobPosting
-from scrapers import saramin, saramin_html, wanted, incruit, jumpit, peoplenjob
+from scrapers import saramin, saramin_html, wanted, jumpit, peoplenjob
 
 
 async def collect_all():
@@ -25,7 +25,10 @@ async def collect_all():
     all_jobs.extend(jumpit_jobs)
     all_jobs.extend(peoplenjob_jobs)
 
-    print(f"[수집 완료] 사람인 {len(saramin_jobs)}건 | 원티드 {len(wanted_jobs)}건 | 점핏 {len(jumpit_jobs)}건 | 피플앤잡 {len(peoplenjob_jobs)}건")
+    print(
+        f"[수집 완료] 사람인 {len(saramin_jobs)}건 | 원티드 {len(wanted_jobs)}건 | "
+        f"점핏 {len(jumpit_jobs)}건 | 피플앤잡 {len(peoplenjob_jobs)}건"
+    )
 
     saved = 0
     for job_data in all_jobs:

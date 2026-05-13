@@ -4,7 +4,11 @@ from typing import List, Dict
 
 SEARCH_URL = "https://search.incruit.com/list/search.asp"
 
-HR_KEYWORDS = ["HR", "인사담당", "채용담당", "인재개발", "노무"]
+HR_KEYWORDS = [
+    "HR", "인사담당", "채용담당", "인재개발", "노무",
+    "인사총무", "조직문화", "인사기획", "HRD", "HRBP",
+    "인사팀", "총무", "채용매니저",
+]
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
@@ -19,31 +23,35 @@ async def fetch_jobs() -> List[Dict]:
 
     async with httpx.AsyncClient(timeout=15, headers=HEADERS, follow_redirects=True) as client:
         for keyword in HR_KEYWORDS:
-            try:
-                resp = await client.get(SEARCH_URL, params={
-                    "col": "job",
-                    "query": keyword,
-                    "page": 1,
-                })
-                if resp.status_code != 200:
-                    print(f"[인크루트] {keyword} 오류: {resp.status_code}")
-                    continue
+            for page in range(1, 4):  # 최대 3페이지
+                try:
+                    resp = await client.get(SEARCH_URL, params={
+                        "col": "job",
+                        "query": keyword,
+                        "page": page,
+                    })
+                    if resp.status_code != 200:
+                        print(f"[인크루트] {keyword} 오류: {resp.status_code}")
+                        break
 
-                soup = BeautifulSoup(resp.text, "lxml")
-                items = soup.select(".joblist_area .job_info_wrap") or soup.select(".job_list li")
+                    soup = BeautifulSoup(resp.text, "lxml")
+                    items = soup.select(".joblist_area .job_info_wrap") or soup.select(".job_list li")
 
-                if not items:
-                    # 대체 선택자 시도
-                    items = soup.select("[class*='job_item']") or soup.select(".list_wrap li")
+                    if not items:
+                        items = soup.select("[class*='job_item']") or soup.select(".list_wrap li")
 
-                for item in items:
-                    parsed = _parse_item(item)
-                    if parsed and parsed["external_id"] not in seen_ids:
-                        seen_ids.add(parsed["external_id"])
-                        results.append(parsed)
+                    if not items:
+                        break
 
-            except Exception as e:
-                print(f"[인크루트] {keyword} 예외: {e}")
+                    for item in items:
+                        parsed = _parse_item(item)
+                        if parsed and parsed["external_id"] not in seen_ids:
+                            seen_ids.add(parsed["external_id"])
+                            results.append(parsed)
+
+                except Exception as e:
+                    print(f"[인크루트] {keyword} p{page} 예외: {e}")
+                    break
 
     return results
 

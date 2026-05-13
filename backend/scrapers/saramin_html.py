@@ -6,7 +6,11 @@ from typing import List, Dict
 BASE_URL = "https://www.saramin.co.kr"
 SEARCH_URL = f"{BASE_URL}/zf_user/search/recruit"
 
-HR_KEYWORDS = ["HR", "인사담당", "채용담당", "인재개발", "노무사"]
+HR_KEYWORDS = [
+    "HR", "인사담당", "채용담당", "인재개발", "노무사",
+    "인사총무", "조직문화", "인사기획", "HRD", "노무관리",
+    "채용매니저", "People", "HRBP", "인사팀", "총무",
+]
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
@@ -21,7 +25,7 @@ async def fetch_jobs() -> List[Dict]:
 
     async with httpx.AsyncClient(timeout=15, headers=HEADERS, follow_redirects=True) as client:
         for keyword in HR_KEYWORDS:
-            for page in range(1, 4):  # 최대 3페이지
+            for page in range(1, 6):  # 최대 5페이지
                 try:
                     resp = await client.get(SEARCH_URL, params={
                         "searchType": "search",

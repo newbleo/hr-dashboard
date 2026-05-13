@@ -3,8 +3,8 @@ from typing import List, Dict
 
 WANTED_API_URL = "https://www.wanted.co.kr/api/v4/jobs"
 
-# 인사/총무, HR, 채용, 노무 관련 job_group_id
-HR_GROUP_IDS = [6, 8]  # 6: 인사/총무, 8: 법무/특허/사무
+# 6: 인사/총무, 8: 법무/특허/사무, 10: 경영/전략, 16: 교육, 100: 기타
+HR_GROUP_IDS = [6, 8, 10, 16, 100]
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",

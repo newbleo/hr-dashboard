@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, desc, case
+from sqlalchemy import select, func, desc, case, asc, or_
 from dotenv import load_dotenv
 
 from database import init_db, get_db
@@ -36,16 +36,33 @@ app.add_middleware(
 )
 
 
+CATEGORY_FILTERS = {
+    "채용담당": [JobPosting.title.ilike('%채용%'), JobPosting.title.ilike('%리크루%'), JobPosting.title.ilike('%recruit%')],
+    "HRD":    [JobPosting.title.ilike('%HRD%'), JobPosting.title.ilike('%인재개발%'), JobPosting.title.ilike('%교육%')],
+    "노무":    [JobPosting.title.ilike('%노무%')],
+    "조직문화": [JobPosting.title.ilike('%조직문화%'), JobPosting.title.ilike('%컬처%'), JobPosting.title.ilike('%culture%')],
+    "인사기획": [JobPosting.title.ilike('%인사기획%'), JobPosting.title.ilike('%HRBP%'), JobPosting.title.ilike('%HR기획%')],
+    "총무":    [JobPosting.title.ilike('%총무%')],
+}
+
+
 @app.get("/api/jobs")
 async def get_jobs(
     source: str | None = None,
     keyword: str | None = None,
     location: str | None = None,
+    category: str | None = None,
+    sort: str = "latest",
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ):
-    stmt = select(JobPosting).order_by(desc(JobPosting.fetched_at))
+    stmt = select(JobPosting)
+
+    if sort == "deadline":
+        stmt = stmt.order_by(asc(JobPosting.deadline).nulls_last())
+    else:
+        stmt = stmt.order_by(desc(JobPosting.fetched_at))
 
     if source:
         stmt = stmt.where(JobPosting.source == source)
@@ -56,6 +73,8 @@ async def get_jobs(
         )
     if location:
         stmt = stmt.where(JobPosting.location.ilike(f"%{location}%"))
+    if category and category in CATEGORY_FILTERS:
+        stmt = stmt.where(or_(*CATEGORY_FILTERS[category]))
 
     total_stmt = select(func.count()).select_from(stmt.subquery())
     total = (await db.execute(total_stmt)).scalar_one()

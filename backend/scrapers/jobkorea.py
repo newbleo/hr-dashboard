@@ -4,7 +4,11 @@ from typing import List, Dict
 
 SEARCH_URL = "https://www.jobkorea.co.kr/Search/"
 
-HR_KEYWORDS = ["인사담당자", "HR", "채용담당", "인재개발"]
+HR_KEYWORDS = [
+    "인사담당자", "HR", "채용담당", "인재개발",
+    "인사총무", "조직문화", "인사기획", "HRD", "노무",
+    "HRBP", "인사팀", "총무", "채용매니저",
+]
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
@@ -14,29 +18,36 @@ HEADERS = {
 
 async def fetch_jobs() -> List[Dict]:
     results = []
+    seen_ids = set()
 
     async with httpx.AsyncClient(timeout=15, headers=HEADERS, follow_redirects=True) as client:
         for keyword in HR_KEYWORDS:
-            try:
-                resp = await client.get(SEARCH_URL, params={
-                    "stext": keyword,
-                    "tabType": "recruit",
-                    "Page_No": 1,
-                })
-                if resp.status_code != 200:
-                    print(f"[잡코리아] {keyword} 오류: {resp.status_code}")
-                    continue
+            for page in range(1, 4):  # 최대 3페이지
+                try:
+                    resp = await client.get(SEARCH_URL, params={
+                        "stext": keyword,
+                        "tabType": "recruit",
+                        "Page_No": page,
+                    })
+                    if resp.status_code != 200:
+                        print(f"[잡코리아] {keyword} 오류: {resp.status_code}")
+                        break
 
-                soup = BeautifulSoup(resp.text, "lxml")
-                job_items = soup.select("div.list-post .post-item")
+                    soup = BeautifulSoup(resp.text, "lxml")
+                    job_items = soup.select("div.list-post .post-item")
 
-                for item in job_items:
-                    normalized = _parse_item(item)
-                    if normalized:
-                        results.append(normalized)
+                    if not job_items:
+                        break
 
-            except Exception as e:
-                print(f"[잡코리아] {keyword} 예외: {e}")
+                    for item in job_items:
+                        normalized = _parse_item(item)
+                        if normalized and normalized["external_id"] not in seen_ids:
+                            seen_ids.add(normalized["external_id"])
+                            results.append(normalized)
+
+                except Exception as e:
+                    print(f"[잡코리아] {keyword} p{page} 예외: {e}")
+                    break
 
     return results
 
