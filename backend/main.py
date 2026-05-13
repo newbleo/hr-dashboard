@@ -1,4 +1,5 @@
 import os
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,8 +18,8 @@ load_dotenv()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
-    await collect_all()
     job_scheduler.start()
+    asyncio.create_task(collect_all())  # 포트 열고 난 뒤 백그라운드 수집
     yield
     job_scheduler.stop()
 
