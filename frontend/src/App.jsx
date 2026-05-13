@@ -12,7 +12,7 @@ export default function App() {
       <header style={styles.header}>
         <div className="container" style={styles.headerInner}>
           <h1 style={styles.logo}>잡줍줍 🧺</h1>
-          <span style={styles.tagline}>채용공고 한방에 줍줍</span>
+          <span style={styles.tagline} className="tagline-hide">채용공고 한방에 줍줍</span>
           <nav style={styles.nav}>
             {TABS.map((t, i) => (
               <button

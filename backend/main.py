@@ -94,11 +94,19 @@ async def get_stats(db: AsyncSession = Depends(get_db)):
         .order_by(desc(func.count()))
     )).all()
 
+    by_category = (await db.execute(
+        select(JobPosting.job_category, func.count())
+        .where(JobPosting.job_category != None, JobPosting.job_category != "")
+        .group_by(JobPosting.job_category)
+        .order_by(desc(func.count()))
+        .limit(10)
+    )).all()
+
     return {
         "total": total,
         "by_source": [{"source": s, "count": c} for s, c in by_source],
-        "by_location": [{"location": l, "count": c} for l, c in by_location],
         "by_experience": [{"experience": e, "count": c} for e, c in by_experience],
+        "by_category": [{"category": cat, "count": c} for cat, c in by_category],
     }
 
 
