@@ -136,16 +136,15 @@ ALLOWED_ORIGINS=http://localhost:5173
 
 ## 스크린샷
 
-### 채용공고 목록
-![채용공고 목록](docs/screenshot-joblist.png)
+### 채용공고 목록 — 리스트 뷰
+![list_ver1.0](list_ver1.0.png)
 
-### 직무별 필터 (조직문화)
-![직무별 필터](docs/screenshot-filter.png)
+![list_ver1.1](list_ver1.1.png)
+
+![list_ver1.2](list_ver1.2.png)
 
 ### 통계 대시보드
-![통계 대시보드](docs/screenshot-dashboard.png)
-
-> 스크린샷은 추후 업데이트 예정입니다.
+![dashboard_ver1.0](dashboard_ver1.0.png)
 
 <br>
 
