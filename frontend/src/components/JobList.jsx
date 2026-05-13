@@ -119,18 +119,18 @@ function JobCard({ job, isBookmarked, onBookmark }) {
     <div className="job-card-wrap">
       <a href={job.url} target="_blank" rel="noreferrer" className="job-card-link">
         <div className="job-card">
-          <div className="job-card-top">
-            <span className={`badge badge-${job.source}`}>
-              {SOURCE_LABEL[job.source] || job.source}
-            </span>
-            <DdayBadge deadline={job.deadline} />
+          <span className={`badge badge-${job.source}`}>
+            {SOURCE_LABEL[job.source] || job.source}
+          </span>
+          <div className="job-card-body">
+            <span className="job-company">{job.company}</span>
+            <span className="job-divider">·</span>
+            <span className="job-title">{job.title}</span>
           </div>
-          <div className="job-company">{job.company}</div>
-          <div className="job-title">{job.title}</div>
-          <div className="job-meta">
+          <div className="job-card-right">
             {job.location && <span className="meta-chip">📍 {job.location}</span>}
             {job.experience && <span className="meta-chip">💼 {job.experience}</span>}
-            {job.salary && <span className="meta-chip">💰 {job.salary}</span>}
+            <DdayBadge deadline={job.deadline} />
           </div>
         </div>
       </a>
@@ -178,7 +178,7 @@ export default function JobList() {
       setWarmingCount(0)
     }
     try {
-      const res = await getJobs({ page: p, size: 20, ...params })
+      const res = await getJobs({ page: p, size: 30, ...params })
       setJobs(res.data.items)
       setTotal(res.data.total)
       setPage(p)
