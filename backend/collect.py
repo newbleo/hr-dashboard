@@ -1,9 +1,20 @@
 import os
-from sqlalchemy import select
+from datetime import datetime, timedelta
+from sqlalchemy import select, delete
 from sqlalchemy.exc import IntegrityError
 from database import AsyncSessionLocal
 from models import JobPosting
 from scrapers import saramin, saramin_html, wanted, jumpit, peoplenjob
+
+
+async def cleanup_old_postings():
+    cutoff = datetime.utcnow() - timedelta(days=30)
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            delete(JobPosting).where(JobPosting.fetched_at < cutoff)
+        )
+        await session.commit()
+        print(f"[정리] 30일 초과 공고 {result.rowcount}건 삭제")
 
 
 async def collect_all():
@@ -47,4 +58,5 @@ async def collect_all():
                 print(f"[저장 오류] {e}")
 
     print(f"[DB 저장] 신규 {saved}건")
+    await cleanup_old_postings()
     return saved

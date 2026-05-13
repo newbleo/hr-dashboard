@@ -58,16 +58,37 @@ export default function JobList() {
   const [category, setCategory] = useState('')
   const [source, setSource] = useState('')
   const [sort, setSort] = useState('latest')
+  const [error, setError] = useState(false)
+  const [warming, setWarming] = useState(false)
+  const [warmingCount, setWarmingCount] = useState(0)
 
-  const load = async (p, params) => {
-    setLoading(true)
+  const MAX_RETRIES = 4
+  const RETRY_DELAY = 15000
+
+  const load = async (p, params, retry = 0) => {
+    if (retry === 0) {
+      setLoading(true)
+      setWarming(false)
+      setError(false)
+      setWarmingCount(0)
+    }
     try {
       const res = await getJobs({ page: p, size: 20, ...params })
       setJobs(res.data.items)
       setTotal(res.data.total)
       setPage(p)
-    } finally {
       setLoading(false)
+      setWarming(false)
+    } catch {
+      if (retry < MAX_RETRIES) {
+        setWarming(true)
+        setWarmingCount(retry + 1)
+        setTimeout(() => load(p, params, retry + 1), RETRY_DELAY)
+      } else {
+        setLoading(false)
+        setWarming(false)
+        setError(true)
+      }
     }
   }
 
@@ -155,7 +176,21 @@ export default function JobList() {
 
       {/* 공고 목록 */}
       {loading ? (
-        <div className="empty-state">불러오는 중...</div>
+        <div className="empty-state">
+          {warming ? (
+            <>
+              서버 깨우는 중... ☕<br />
+              <span style={{ fontSize: 13, color: '#bbb' }}>
+                Render 무료 서버라 최대 60초 걸릴 수 있어요 ({warmingCount * 15}초 경과)
+              </span>
+            </>
+          ) : '불러오는 중...'}
+        </div>
+      ) : error ? (
+        <div className="empty-state">
+          서버에 연결할 수 없어요.<br />
+          <span style={{ fontSize: 13, color: '#bbb' }}>잠시 후 새로고침 해주세요.</span>
+        </div>
       ) : jobs.length === 0 ? (
         <div className="empty-state">검색 결과가 없어요.</div>
       ) : (

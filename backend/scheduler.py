@@ -8,7 +8,7 @@ scheduler = AsyncIOScheduler()
 def start():
     scheduler.add_job(
         collect_all,
-        trigger=IntervalTrigger(hours=3),
+        trigger=IntervalTrigger(hours=6),
         id="collect_jobs",
         replace_existing=True,
     )
