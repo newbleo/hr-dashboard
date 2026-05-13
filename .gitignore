@@ -12,3 +12,14 @@
 .vscode/
 PPT/
 rokey/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.db
+
+# Node
+node_modules/
+dist/
