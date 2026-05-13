@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, desc
+from sqlalchemy import select, func, desc, case
 from dotenv import load_dotenv
 
 from database import init_db, get_db
@@ -94,12 +94,21 @@ async def get_stats(db: AsyncSession = Depends(get_db)):
         .order_by(desc(func.count()))
     )).all()
 
+    t = JobPosting.title
+    job_type_col = case(
+        (t.ilike('%노무%'), '노무'),
+        (t.ilike('%조직문화%') | t.ilike('%컬처%') | t.ilike('%employee experience%'), '조직문화'),
+        (t.ilike('%HRD%') | t.ilike('%인재개발%') | t.ilike('%교육%'), '교육/HRD'),
+        (t.ilike('%채용%') | t.ilike('%리크루%') | t.ilike('%recruit%'), '채용'),
+        (t.ilike('%인사기획%') | t.ilike('%HRBP%') | t.ilike('%HR기획%'), '인사기획'),
+        (t.ilike('%총무%'), '총무'),
+        else_='HR 일반',
+    )
+
     by_category = (await db.execute(
-        select(JobPosting.job_category, func.count())
-        .where(JobPosting.job_category != None, JobPosting.job_category != "")
-        .group_by(JobPosting.job_category)
+        select(job_type_col.label('job_type'), func.count())
+        .group_by(job_type_col)
         .order_by(desc(func.count()))
-        .limit(10)
     )).all()
 
     return {
