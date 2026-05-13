@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, desc, case, asc, or_
+from sqlalchemy import select, func, desc, case, asc, or_, delete
 from dotenv import load_dotenv
 
 from database import init_db, get_db
@@ -37,12 +37,38 @@ app.add_middleware(
 
 
 CATEGORY_FILTERS = {
-    "채용담당": [JobPosting.title.ilike('%채용%'), JobPosting.title.ilike('%리크루%'), JobPosting.title.ilike('%recruit%')],
-    "HRD":    [JobPosting.title.ilike('%HRD%'), JobPosting.title.ilike('%인재개발%'), JobPosting.title.ilike('%교육%')],
+    "채용담당": [
+        JobPosting.title.ilike('%채용담당%'),
+        JobPosting.title.ilike('%채용매니저%'),
+        JobPosting.title.ilike('%채용전문%'),
+        JobPosting.title.ilike('%리크루터%'),
+        JobPosting.title.ilike('%recruiter%'),
+        JobPosting.title.ilike('%recruit%'),
+        JobPosting.title.ilike('%TA%'),
+    ],
+    "HRD": [
+        JobPosting.title.ilike('%HRD%'),
+        JobPosting.title.ilike('%인재개발%'),
+        JobPosting.title.ilike('%교육담당%'),
+        JobPosting.title.ilike('%교육훈련%'),
+        JobPosting.title.ilike('%L&D%'),
+        JobPosting.title.ilike('%러닝%'),
+    ],
     "노무":    [JobPosting.title.ilike('%노무%')],
-    "조직문화": [JobPosting.title.ilike('%조직문화%'), JobPosting.title.ilike('%컬처%'), JobPosting.title.ilike('%culture%')],
-    "인사기획": [JobPosting.title.ilike('%인사기획%'), JobPosting.title.ilike('%HRBP%'), JobPosting.title.ilike('%HR기획%')],
-    "총무":    [JobPosting.title.ilike('%총무%')],
+    "조직문화": [
+        JobPosting.title.ilike('%조직문화%'),
+        JobPosting.title.ilike('%컬처%'),
+        JobPosting.title.ilike('%culture%'),
+        JobPosting.title.ilike('%employee experience%'),
+    ],
+    "인사기획": [
+        JobPosting.title.ilike('%인사기획%'),
+        JobPosting.title.ilike('%HRBP%'),
+        JobPosting.title.ilike('%HR기획%'),
+        JobPosting.title.ilike('%HR전략%'),
+        JobPosting.title.ilike('%인사전략%'),
+    ],
+    "총무": [JobPosting.title.ilike('%총무%')],
 }
 
 
@@ -142,6 +168,21 @@ async def get_stats(db: AsyncSession = Depends(get_db)):
 async def trigger_collect():
     saved = await collect_all()
     return {"saved": saved}
+
+
+@app.post("/api/purge-non-hr")
+async def purge_non_hr(db: AsyncSession = Depends(get_db)):
+    hr_keywords = [
+        '%HR%', '%인사%', '%채용%', '%노무%', '%조직문화%',
+        '%HRD%', '%인재개발%', '%HRBP%', '%총무%', '%교육담당%',
+        '%컬처%', '%리크루%', '%recruit%', '%people%', '%talent%',
+    ]
+    hr_condition = or_(*[JobPosting.title.ilike(kw) for kw in hr_keywords])
+    result = await db.execute(
+        delete(JobPosting).where(~hr_condition)
+    )
+    await db.commit()
+    return {"deleted": result.rowcount}
 
 
 def _serialize(job: JobPosting) -> dict:
