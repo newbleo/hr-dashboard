@@ -134,17 +134,24 @@ ALLOWED_ORIGINS=http://localhost:5173
 
 <br>
 
-## 스크린샷
+## 개발 히스토리
 
-### 채용공고 목록 — 리스트 뷰
+### v1.0 — 초기 버전 (대시보드 + 그리드 카드)
+통계 대시보드와 3열 그리드 카드 형태로 시작했으나, 사용성 검토 후 대시보드 탭 제거.
+
+![dashboard_ver1.0](dashboard_ver1.0.png)
+
 ![list_ver1.0](list_ver1.0.png)
+
+### v1.1 — 필터/정렬 개선
+직무 카테고리 탭, 포털·지역 필터, 마감임박순 정렬 추가.
 
 ![list_ver1.1](list_ver1.1.png)
 
-![list_ver1.2](list_ver1.2.png)
+### v1.2 — 현재 서비스 (리스트 뷰)
+3열 그리드 → 단일 열 수평 리스트로 변경. 한 화면에 더 많은 공고를 표시.
 
-### 통계 대시보드
-![dashboard_ver1.0](dashboard_ver1.0.png)
+![list_ver1.2](list_ver1.2.png)
 
 <br>
 
